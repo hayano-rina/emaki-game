@@ -127,29 +127,45 @@ function create() {
   });
 
   // ====================================
-  // キーボード入力
+  // Touch入力
   // ====================================
 
-  this.cursors = this.input.keyboard.createCursorKeys();
+  this.touchStartX = null;
+  this.touchStartY = null;
+
+  this.input.on("pointerdown", (pointer) => {
+    this.touchStartX = pointer.x;
+    this.touchStartY = pointer.y;
+  });
+
+  this.input.on("pointerup", (pointer) => {
+    if (this.touchStartX === null) {
+      return;
+    }
+
+    const dx = pointer.x - this.touchStartX;
+    const dy = pointer.y - this.touchStartY;
+
+    // 横方向のスワイプだけを移動として扱う
+    if (Math.abs(dx) > Math.abs(dy)) {
+      const moveAmount = dx;
+
+      console.log("moveAmount:", moveAmount);
+
+      // スワイプした距離だけ背景を動かす
+      this.worldContainer.x -= moveAmount;
+    }
+
+    this.touchStartX = null;
+    this.touchStartY = null;
+  });
 }
 
 // ========================================
 // update
 // ========================================
 
-function update() {
-  const scrollSpeed = 5;
-
-  // 左キー
-  if (this.cursors.left.isDown) {
-    this.worldContainer.x += scrollSpeed;
-  }
-
-  // 右キー
-  if (this.cursors.right.isDown) {
-    this.worldContainer.x -= scrollSpeed;
-  }
-}
+function update() {}
 
 // ========================================
 // 家
