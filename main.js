@@ -125,13 +125,31 @@ function create() {
     fontSize: "24px",
     color: "#333333",
   });
+
+  // ====================================
+  // キーボード入力
+  // ====================================
+
+  this.cursors = this.input.keyboard.createCursorKeys();
 }
 
 // ========================================
 // update
 // ========================================
 
-function update() {}
+function update() {
+  const scrollSpeed = 5;
+
+  // 左キー
+  if (this.cursors.left.isDown) {
+    this.worldContainer.x += scrollSpeed;
+  }
+
+  // 右キー
+  if (this.cursors.right.isDown) {
+    this.worldContainer.x -= scrollSpeed;
+  }
+}
 
 // ========================================
 // 家
