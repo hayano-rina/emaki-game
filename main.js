@@ -117,6 +117,9 @@ function create() {
 
   drawPlayer(this);
 
+  // Touch入力
+  this.gameInput = new TouchInput(this);
+
   // ====================================
   // 開発用表示
   // ====================================
@@ -125,47 +128,17 @@ function create() {
     fontSize: "24px",
     color: "#333333",
   });
-
-  // ====================================
-  // Touch入力
-  // ====================================
-
-  this.touchStartX = null;
-  this.touchStartY = null;
-
-  this.input.on("pointerdown", (pointer) => {
-    this.touchStartX = pointer.x;
-    this.touchStartY = pointer.y;
-  });
-
-  this.input.on("pointerup", (pointer) => {
-    if (this.touchStartX === null) {
-      return;
-    }
-
-    const dx = pointer.x - this.touchStartX;
-    const dy = pointer.y - this.touchStartY;
-
-    // 横方向のスワイプだけを移動として扱う
-    if (Math.abs(dx) > Math.abs(dy)) {
-      const moveAmount = dx;
-
-      console.log("moveAmount:", moveAmount);
-
-      // スワイプした距離だけ背景を動かす
-      this.worldContainer.x -= moveAmount;
-    }
-
-    this.touchStartX = null;
-    this.touchStartY = null;
-  });
 }
 
 // ========================================
 // update
 // ========================================
 
-function update() {}
+function update() {
+  const moveAmount = this.gameInput.getMoveAmount();
+
+  this.worldContainer.x -= moveAmount;
+}
 
 // ========================================
 // 家
