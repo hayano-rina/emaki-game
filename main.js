@@ -135,9 +135,53 @@ function create() {
 // ========================================
 
 function update() {
-  const moveAmount = this.gameInput.getMoveAmount();
+  // ====================================
+  // 移動量を取得
+  // ====================================
+
+  const inputAmount = this.gameInput.getMoveAmount();
+
+  // ====================================
+  // 移動速度
+  // ====================================
+
+  const moveSpeed = 0.5;
+
+  // ====================================
+  // 1回のスワイプで動ける最大量
+  // ====================================
+
+  const maxMoveAmount = 100;
+
+  // ====================================
+  // 移動量を調整
+  // ====================================
+
+  let moveAmount = inputAmount * moveSpeed;
+
+  moveAmount = Phaser.Math.Clamp(moveAmount, -maxMoveAmount, maxMoveAmount);
+
+  // ====================================
+  // ワールドを移動
+  // ====================================
 
   this.worldContainer.x -= moveAmount;
+
+  // ====================================
+  // 画面端を制限
+  // ====================================
+
+  const worldWidth = 7000;
+  const screenWidth = 1280;
+
+  const minWorldX = screenWidth - worldWidth;
+  const maxWorldX = 0;
+
+  this.worldContainer.x = Phaser.Math.Clamp(
+    this.worldContainer.x,
+    minWorldX,
+    maxWorldX,
+  );
 }
 
 // ========================================

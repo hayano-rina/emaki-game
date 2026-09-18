@@ -22,9 +22,14 @@ class TouchInput extends GameInput {
 
       // 横方向のスワイプだけを移動として扱う
       if (Math.abs(dx) > Math.abs(dy)) {
-        this.moveAmount += dx;
+        // 小さすぎるスワイプは無視
+        const minSwipeDistance = 10;
 
-        console.log("Touch moveAmount:", dx);
+        if (Math.abs(dx) >= minSwipeDistance) {
+          this.moveAmount += dx;
+
+          console.log("Touch moveAmount:", dx);
+        }
       }
 
       this.touchStartX = null;
@@ -35,7 +40,6 @@ class TouchInput extends GameInput {
   getMoveAmount() {
     const amount = this.moveAmount;
 
-    // 読み取ったらリセット
     this.moveAmount = 0;
 
     return amount;
