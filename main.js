@@ -57,11 +57,34 @@ function create() {
   // ドア発見状態
   this.doorDetected = false;
 
+  this.doorOpened = false;
+
   // 「！」アイコン
   this.doorNotice = null;
 
   // ドア操作ポップアップ
   this.doorPopup = null;
+
+  this.doorRotation = 0;
+
+  this.doorSuccessPopup = null;
+
+  this.doorKnobVisual = null;
+  this.doorProgressGraphics = null;
+
+  this.bridgeX = 2900;
+  this.bridgeCleared = false;
+
+  this.bridgeConfig = {
+    name: "bridge",
+    x: 2900,
+    rotationRequired: 180,
+    correctDirection: 1,
+    title: "橋を下ろそう！",
+    instruction: "ハンドルを右回りになぞろう！",
+    successTitle: "橋が下りた！",
+    successMessage: "川を渡ろう！",
+  };
 
   // ------------------------------------
   // 背景
@@ -139,11 +162,35 @@ function create() {
 
   drawPlayer(this);
 
+  // ============================
+  // 橋の設定
+  // ============================
+
+  this.bridgeConfig = {
+    name: "bridge",
+
+    x: 2900,
+
+    rotationRequired: 180,
+
+    // 右回りが正解
+    correctDirection: 1,
+
+    title: "橋を下ろそう！",
+
+    instruction: "ハンドルを右回りになぞろう！",
+
+    successTitle: "橋が下りた！",
+
+    successMessage: "川を渡ろう！",
+  };
+
   // ====================================
   // Touch入力
   // ====================================
 
   this.gameInput = new TouchInput(this);
+  this.gimmickManager = new GimmickManager(this);
 
   // ====================================
   // 開発用表示
@@ -168,7 +215,6 @@ function update() {
     const inputAmount = this.gameInput.getMoveAmount();
 
     const moveSpeed = 0.5;
-
     const maxMoveAmount = 100;
 
     let moveAmount = inputAmount * moveSpeed;
@@ -182,7 +228,6 @@ function update() {
     // ====================================
 
     const worldWidth = this.worldWidth;
-
     const screenWidth = 1280;
 
     const minWorldX = screenWidth - worldWidth;
@@ -201,29 +246,22 @@ function update() {
   // ====================================
 
   if (this.isMoving) {
-    // ドアが現在画面上のどこにあるか
     const doorScreenX = this.doorX + this.worldContainer.x;
 
-    // 主人公の画面上の位置
     const playerX = 640;
 
-    // ドアと主人公の距離
     const distance = Math.abs(doorScreenX - playerX);
 
-    // この距離まで近づいたらドア発見
     const doorDetectionDistance = 30;
 
-    if (distance <= doorDetectionDistance) {
+    if (distance <= doorDetectionDistance && !this.doorOpened) {
       this.isMoving = false;
 
       this.doorDetected = true;
 
       console.log("DOOR DETECTED");
 
-      // ====================================
       // 「！」アイコン
-      // ====================================
-
       this.doorNotice = this.add
         .text(playerX, 350, "!", {
           fontSize: "64px",
@@ -234,12 +272,120 @@ function update() {
         })
         .setOrigin(0.5);
 
-      // ====================================
-      // ドア操作ポップアップ
-      // ====================================
-
+      // ドア操作Popup
       this.doorPopup = showDoorPopup(this);
     }
+  }
+
+  // ====================================
+  // 橋の検出
+  // ====================================
+
+  if (this.isMoving && !this.bridgeCleared) {
+    const bridgeScreenX = this.bridgeX + this.worldContainer.x;
+
+    const playerX = 640;
+
+    const distance = Math.abs(bridgeScreenX - playerX);
+
+    const bridgeDetectionDistance = 30;
+
+    if (distance <= bridgeDetectionDistance) {
+      console.log("BRIDGE DETECTED");
+
+      this.gimmickManager.startGimmick(this.bridgeConfig);
+    }
+  }
+
+  // ====================================
+  // ドアの回転操作
+  // ====================================
+
+  if (this.doorDetected && !this.isMoving) {
+    const rotationAmount = this.gameInput.getRotationAmount();
+
+    if (rotationAmount > 0) {
+      this.doorRotation = (this.doorRotation || 0) + rotationAmount;
+
+      // ドアノブを回す
+      if (this.doorKnobVisual) {
+        this.doorKnobVisual.angle = this.doorRotation;
+      }
+
+      // 回転進捗
+      if (this.doorProgressGraphics) {
+        const graphics = this.doorProgressGraphics;
+
+        graphics.clear();
+
+        graphics.lineStyle(8, 0xe0b84f, 1);
+
+        const progress = Phaser.Math.Clamp(this.doorRotation / 180, 0, 1);
+
+        const startAngle = -Math.PI / 2;
+
+        const endAngle = startAngle + Math.PI * 2 * progress;
+
+        graphics.beginPath();
+
+        graphics.arc(680, 320, 35, startAngle, endAngle, false);
+
+        graphics.strokePath();
+      }
+
+      console.log("DOOR ROTATION:", this.doorRotation);
+
+      // 180°達成
+      if (this.doorRotation >= 180) {
+        console.log("DOOR OPENED");
+
+        this.doorOpened = true;
+        this.doorDetected = false;
+
+        // 回転入力リセット
+        this.gameInput.rotationAmount = 0;
+        this.gameInput.rotationDirection = 0;
+        this.gameInput.isRotating = false;
+        this.gameInput.previousAngle = null;
+
+        // Popup削除
+        if (this.doorPopup) {
+          this.doorPopup.destroy();
+
+          this.doorPopup = null;
+        }
+
+        // 「！」削除
+        if (this.doorNotice) {
+          this.doorNotice.destroy();
+
+          this.doorNotice = null;
+        }
+
+        this.doorRotation = 0;
+
+        this.doorKnobVisual = null;
+        this.doorProgressGraphics = null;
+
+        // 成功表示
+        showDoorSuccessPopup(this);
+
+        // 成功表示中は移動停止
+        this.isMoving = false;
+      }
+    }
+  }
+
+  // ====================================
+  // 共通ギミックの回転操作
+  // ====================================
+
+  if (!this.isMoving && this.gimmickManager && this.gimmickManager.current) {
+    const rotationAmount = this.gameInput.getRotationAmount();
+
+    const rotationDirection = this.gameInput.rotationDirection;
+
+    this.gimmickManager.updateRotation(rotationAmount, rotationDirection);
   }
 }
 
@@ -712,9 +858,42 @@ function showDoorPopup(scene) {
   // ドアノブ
   // ====================================
 
-  const knob = scene.add.circle(680, 340, 14, 0xe0b84f);
+  // ====================================
+  // ドアノブ
+  // ====================================
 
-  popup.add(knob);
+  // ドアノブ全体を回転させるコンテナ
+  const knobContainer = scene.add.container(680, 340);
+
+  // ノブ本体
+  const knob = scene.add.circle(0, 0, 18, 0xe0b84f);
+
+  knobContainer.add(knob);
+
+  // ノブの回転が分かる目印
+  const knobMarker = scene.add.rectangle(0, -15, 5, 12, 0xffffff);
+
+  knobContainer.add(knobMarker);
+
+  // ポップアップに追加
+  popup.add(knobContainer);
+
+  // シーンから操作できるように保存
+  scene.doorKnobVisual = knobContainer;
+
+  // 回転中心
+  scene.gameInput.rotationCenterX = 680;
+  scene.gameInput.rotationCenterY = 340;
+
+  // ====================================
+  // 回転進捗表示
+  // ====================================
+
+  const progressGraphics = scene.add.graphics();
+
+  popup.add(progressGraphics);
+
+  scene.doorProgressGraphics = progressGraphics;
 
   // ====================================
   // 回転方向
@@ -754,4 +933,73 @@ function showDoorPopup(scene) {
   // ====================================
 
   return popup;
+}
+
+// ========================================
+// ドア開放成功表示
+// ========================================
+
+function showDoorSuccessPopup(scene) {
+  const popup = scene.add.container(0, 0);
+
+  popup.setDepth(200);
+
+  // ====================================
+  // 背景
+  // ====================================
+
+  const background = scene.add.rectangle(640, 360, 800, 300, 0xffffff, 0.95);
+
+  background.setStrokeStyle(6, 0x5a3825);
+
+  popup.add(background);
+
+  // ====================================
+  // 成功メッセージ
+  // ====================================
+
+  const message = scene.add.text(640, 320, "ドアが開いた！", {
+    fontSize: "56px",
+    color: "#333333",
+    fontStyle: "bold",
+  });
+
+  message.setOrigin(0.5);
+
+  popup.add(message);
+
+  // ====================================
+  // 補足
+  // ====================================
+
+  const subMessage = scene.add.text(640, 400, "先へ進もう！", {
+    fontSize: "30px",
+    color: "#555555",
+  });
+
+  subMessage.setOrigin(0.5);
+
+  popup.add(subMessage);
+
+  scene.doorSuccessPopup = popup;
+
+  // ====================================
+  // 1.5秒後に消して移動再開
+  // ====================================
+
+  scene.time.delayedCall(1500, () => {
+    if (scene.doorSuccessPopup) {
+      scene.doorSuccessPopup.destroy();
+
+      scene.doorSuccessPopup = null;
+    }
+
+    // ==================================
+    // 通常移動に戻る
+    // ==================================
+
+    scene.isMoving = true;
+
+    console.log("MOVEMENT RESUMED");
+  });
 }
