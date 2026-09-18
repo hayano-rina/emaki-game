@@ -71,6 +71,10 @@ class GimmickManager {
     console.log("GIMMICK COMPLETE:", gimmick.name);
 
     // 完了状態
+    if (gimmick.name === "door") {
+      this.scene.doorOpened = true;
+    }
+
     if (gimmick.name === "bridge") {
       this.scene.bridgeCleared = true;
     }

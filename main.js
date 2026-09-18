@@ -51,26 +51,32 @@ function create() {
 
   this.isMoving = true;
 
-  // ドアの位置
-  this.doorX = 860;
+  // ====================================
+  // ドア設定
+  // ====================================
 
-  // ドア発見状態
-  this.doorDetected = false;
+  this.doorX = 860;
 
   this.doorOpened = false;
 
-  // 「！」アイコン
-  this.doorNotice = null;
+  this.doorConfig = {
+    name: "door",
 
-  // ドア操作ポップアップ
-  this.doorPopup = null;
+    x: 860,
 
-  this.doorRotation = 0;
+    rotationRequired: 180,
 
-  this.doorSuccessPopup = null;
+    // 右回りが正解
+    correctDirection: 1,
 
-  this.doorKnobVisual = null;
-  this.doorProgressGraphics = null;
+    title: "ドアを開けよう！",
+
+    instruction: "指でドアノブを右回りになぞろう！",
+
+    successTitle: "ドアが開いた！",
+
+    successMessage: "先へ進もう！",
+  };
 
   this.bridgeX = 2900;
   this.bridgeCleared = false;
@@ -242,10 +248,10 @@ function update() {
   }
 
   // ====================================
-  // ドア到達判定
+  // ドアの検出
   // ====================================
 
-  if (this.isMoving) {
+  if (this.isMoving && !this.doorOpened && !this.gimmickManager.current) {
     const doorScreenX = this.doorX + this.worldContainer.x;
 
     const playerX = 640;
@@ -254,26 +260,10 @@ function update() {
 
     const doorDetectionDistance = 30;
 
-    if (distance <= doorDetectionDistance && !this.doorOpened) {
-      this.isMoving = false;
-
-      this.doorDetected = true;
-
+    if (distance <= doorDetectionDistance) {
       console.log("DOOR DETECTED");
 
-      // 「！」アイコン
-      this.doorNotice = this.add
-        .text(playerX, 350, "!", {
-          fontSize: "64px",
-          color: "#ffcc00",
-          fontStyle: "bold",
-          stroke: "#ffffff",
-          strokeThickness: 8,
-        })
-        .setOrigin(0.5);
-
-      // ドア操作Popup
-      this.doorPopup = showDoorPopup(this);
+      this.gimmickManager.startGimmick(this.doorConfig);
     }
   }
 
@@ -294,85 +284,6 @@ function update() {
       console.log("BRIDGE DETECTED");
 
       this.gimmickManager.startGimmick(this.bridgeConfig);
-    }
-  }
-
-  // ====================================
-  // ドアの回転操作
-  // ====================================
-
-  if (this.doorDetected && !this.isMoving) {
-    const rotationAmount = this.gameInput.getRotationAmount();
-
-    if (rotationAmount > 0) {
-      this.doorRotation = (this.doorRotation || 0) + rotationAmount;
-
-      // ドアノブを回す
-      if (this.doorKnobVisual) {
-        this.doorKnobVisual.angle = this.doorRotation;
-      }
-
-      // 回転進捗
-      if (this.doorProgressGraphics) {
-        const graphics = this.doorProgressGraphics;
-
-        graphics.clear();
-
-        graphics.lineStyle(8, 0xe0b84f, 1);
-
-        const progress = Phaser.Math.Clamp(this.doorRotation / 180, 0, 1);
-
-        const startAngle = -Math.PI / 2;
-
-        const endAngle = startAngle + Math.PI * 2 * progress;
-
-        graphics.beginPath();
-
-        graphics.arc(680, 320, 35, startAngle, endAngle, false);
-
-        graphics.strokePath();
-      }
-
-      console.log("DOOR ROTATION:", this.doorRotation);
-
-      // 180°達成
-      if (this.doorRotation >= 180) {
-        console.log("DOOR OPENED");
-
-        this.doorOpened = true;
-        this.doorDetected = false;
-
-        // 回転入力リセット
-        this.gameInput.rotationAmount = 0;
-        this.gameInput.rotationDirection = 0;
-        this.gameInput.isRotating = false;
-        this.gameInput.previousAngle = null;
-
-        // Popup削除
-        if (this.doorPopup) {
-          this.doorPopup.destroy();
-
-          this.doorPopup = null;
-        }
-
-        // 「！」削除
-        if (this.doorNotice) {
-          this.doorNotice.destroy();
-
-          this.doorNotice = null;
-        }
-
-        this.doorRotation = 0;
-
-        this.doorKnobVisual = null;
-        this.doorProgressGraphics = null;
-
-        // 成功表示
-        showDoorSuccessPopup(this);
-
-        // 成功表示中は移動停止
-        this.isMoving = false;
-      }
     }
   }
 

@@ -34,8 +34,7 @@ class TouchInput extends GameInput {
 
       // 現在ギミック操作中か？
       const gimmickActive =
-        (this.scene.gimmickManager && this.scene.gimmickManager.current) ||
-        this.scene.doorDetected;
+        this.scene.gimmickManager && this.scene.gimmickManager.current;
 
       if (gimmickActive) {
         const dx = pointer.x - this.rotationCenterX;
@@ -181,8 +180,7 @@ class TouchInput extends GameInput {
       // 移動入力にしない
 
       const gimmickActive =
-        (this.scene.gimmickManager && this.scene.gimmickManager.current) ||
-        this.scene.doorDetected;
+        this.scene.gimmickManager && this.scene.gimmickManager.current;
 
       if (gimmickActive) {
         this.touchStartX = null;
