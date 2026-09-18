@@ -52,7 +52,16 @@ function create() {
   this.isMoving = true;
 
   // ドアの位置
-  this.doorX = 660;
+  this.doorX = 860;
+
+  // ドア発見状態
+  this.doorDetected = false;
+
+  // 「！」アイコン
+  this.doorNotice = null;
+
+  // ドア操作ポップアップ
+  this.doorPopup = null;
 
   // ------------------------------------
   // 背景
@@ -195,13 +204,41 @@ function update() {
     // ドアが現在画面上のどこにあるか
     const doorScreenX = this.doorX + this.worldContainer.x;
 
-    // ドアを主人公付近まで近づけたら停止
-    const doorTargetX = 500;
+    // 主人公の画面上の位置
+    const playerX = 640;
 
-    if (doorScreenX <= doorTargetX) {
+    // ドアと主人公の距離
+    const distance = Math.abs(doorScreenX - playerX);
+
+    // この距離まで近づいたらドア発見
+    const doorDetectionDistance = 30;
+
+    if (distance <= doorDetectionDistance) {
       this.isMoving = false;
 
+      this.doorDetected = true;
+
       console.log("DOOR DETECTED");
+
+      // ====================================
+      // 「！」アイコン
+      // ====================================
+
+      this.doorNotice = this.add
+        .text(playerX, 350, "!", {
+          fontSize: "64px",
+          color: "#ffcc00",
+          fontStyle: "bold",
+          stroke: "#ffffff",
+          strokeThickness: 8,
+        })
+        .setOrigin(0.5);
+
+      // ====================================
+      // ドア操作ポップアップ
+      // ====================================
+
+      this.doorPopup = showDoorPopup(this);
     }
   }
 }
@@ -624,4 +661,97 @@ function drawPlayer(scene) {
   player.moveTo(670, 505);
   player.lineTo(680, 515);
   player.strokePath();
+}
+
+// ========================================
+// ドア操作ポップアップ
+// ========================================
+
+function showDoorPopup(scene) {
+  // ====================================
+  // ポップアップ全体
+  // ====================================
+
+  const popup = scene.add.container(0, 0);
+
+  popup.setDepth(100);
+
+  // ====================================
+  // 背景
+  // ====================================
+
+  const background = scene.add.rectangle(640, 360, 800, 500, 0xffffff, 0.95);
+
+  background.setStrokeStyle(6, 0x5a3825);
+
+  popup.add(background);
+
+  // ====================================
+  // タイトル
+  // ====================================
+
+  const title = scene.add.text(640, 150, "ドアを開けよう！", {
+    fontSize: "42px",
+    color: "#333333",
+    fontStyle: "bold",
+  });
+
+  title.setOrigin(0.5);
+
+  popup.add(title);
+
+  // ====================================
+  // ドア
+  // ====================================
+
+  const door = scene.add.rectangle(640, 340, 140, 260, 0x5a3825);
+
+  popup.add(door);
+
+  // ====================================
+  // ドアノブ
+  // ====================================
+
+  const knob = scene.add.circle(680, 340, 14, 0xe0b84f);
+
+  popup.add(knob);
+
+  // ====================================
+  // 回転方向
+  // ====================================
+
+  const arrow = scene.add.text(760, 340, "↻", {
+    fontSize: "80px",
+    color: "#d49b2a",
+    fontStyle: "bold",
+  });
+
+  arrow.setOrigin(0.5);
+
+  popup.add(arrow);
+
+  // ====================================
+  // 操作説明
+  // ====================================
+
+  const instruction = scene.add.text(
+    640,
+    550,
+    "指でドアノブを右回りになぞろう！",
+    {
+      fontSize: "27px",
+      color: "#333333",
+      fontStyle: "bold",
+    },
+  );
+
+  instruction.setOrigin(0.5);
+
+  popup.add(instruction);
+
+  // ====================================
+  // 戻り値
+  // ====================================
+
+  return popup;
 }
