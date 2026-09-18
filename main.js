@@ -37,9 +37,22 @@ function create() {
   // 長いゲーム世界
   // ====================================
 
+  this.worldWidth = 7000;
+
   const world = this.add.container(0, 0);
 
   this.worldContainer = world;
+
+  // ====================================
+  // ゲーム状態
+  // ====================================
+
+  this.worldWidth = 7000;
+
+  this.isMoving = true;
+
+  // ドアの位置
+  this.doorX = 660;
 
   // ------------------------------------
   // 背景
@@ -61,7 +74,7 @@ function create() {
   // 家
   // ====================================
 
-  drawHouse(this, world, 500);
+  drawHouse(this, world, 700);
 
   // ====================================
   // 森
@@ -117,14 +130,17 @@ function create() {
 
   drawPlayer(this);
 
+  // ====================================
   // Touch入力
+  // ====================================
+
   this.gameInput = new TouchInput(this);
 
   // ====================================
   // 開発用表示
   // ====================================
 
-  this.add.text(20, 20, "STEP C : WORLD MAP", {
+  this.add.text(20, 20, "STEP E : DOOR DETECTION", {
     fontSize: "24px",
     color: "#333333",
   });
@@ -136,52 +152,58 @@ function create() {
 
 function update() {
   // ====================================
-  // 移動量を取得
+  // 移動中の場合だけスクロール
   // ====================================
 
-  const inputAmount = this.gameInput.getMoveAmount();
+  if (this.isMoving) {
+    const inputAmount = this.gameInput.getMoveAmount();
+
+    const moveSpeed = 0.5;
+
+    const maxMoveAmount = 100;
+
+    let moveAmount = inputAmount * moveSpeed;
+
+    moveAmount = Phaser.Math.Clamp(moveAmount, -maxMoveAmount, maxMoveAmount);
+
+    this.worldContainer.x -= moveAmount;
+
+    // ====================================
+    // 画面端の制限
+    // ====================================
+
+    const worldWidth = this.worldWidth;
+
+    const screenWidth = 1280;
+
+    const minWorldX = screenWidth - worldWidth;
+
+    const maxWorldX = 0;
+
+    this.worldContainer.x = Phaser.Math.Clamp(
+      this.worldContainer.x,
+      minWorldX,
+      maxWorldX,
+    );
+  }
 
   // ====================================
-  // 移動速度
+  // ドア到達判定
   // ====================================
 
-  const moveSpeed = 0.5;
+  if (this.isMoving) {
+    // ドアが現在画面上のどこにあるか
+    const doorScreenX = this.doorX + this.worldContainer.x;
 
-  // ====================================
-  // 1回のスワイプで動ける最大量
-  // ====================================
+    // ドアを主人公付近まで近づけたら停止
+    const doorTargetX = 500;
 
-  const maxMoveAmount = 100;
+    if (doorScreenX <= doorTargetX) {
+      this.isMoving = false;
 
-  // ====================================
-  // 移動量を調整
-  // ====================================
-
-  let moveAmount = inputAmount * moveSpeed;
-
-  moveAmount = Phaser.Math.Clamp(moveAmount, -maxMoveAmount, maxMoveAmount);
-
-  // ====================================
-  // ワールドを移動
-  // ====================================
-
-  this.worldContainer.x -= moveAmount;
-
-  // ====================================
-  // 画面端を制限
-  // ====================================
-
-  const worldWidth = 7000;
-  const screenWidth = 1280;
-
-  const minWorldX = screenWidth - worldWidth;
-  const maxWorldX = 0;
-
-  this.worldContainer.x = Phaser.Math.Clamp(
-    this.worldContainer.x,
-    minWorldX,
-    maxWorldX,
-  );
+      console.log("DOOR DETECTED");
+    }
+  }
 }
 
 // ========================================
